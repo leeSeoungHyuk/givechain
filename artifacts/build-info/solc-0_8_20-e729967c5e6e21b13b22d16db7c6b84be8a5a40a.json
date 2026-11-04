@@ -1,0 +1,74 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_20-e729967c5e6e21b13b22d16db7c6b84be8a5a40a",
+  "solcVersion": "0.8.20",
+  "solcLongVersion": "0.8.20+commit.a1b79de6",
+  "compilerType": "solc",
+  "userSourceNameMap": {
+    "contracts/CampaignDonations.sol": "project/contracts/CampaignDonations.sol",
+    "contracts/CampaignRegistry.sol": "project/contracts/CampaignRegistry.sol",
+    "contracts/CampaignRoster.sol": "project/contracts/CampaignRoster.sol",
+    "contracts/Count.sol": "project/contracts/Count.sol",
+    "contracts/DonationDef.sol": "project/contracts/DonationDef.sol",
+    "contracts/DonorBook.sol": "project/contracts/DonorBook.sol",
+    "contracts/GiveChain.sol": "project/contracts/GiveChain.sol",
+    "contracts/ProfileBook.sol": "project/contracts/ProfileBook.sol",
+    "contracts/SimpleDonation.sol": "project/contracts/SimpleDonation.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "shanghai",
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/CampaignDonations.sol": {
+        "content": "pragma solidity ^0.8.0;\r\ncontract CampaignDonations {\r\n    mapping(uint256 =>\r\n        mapping(address => uint256))\r\n        public campaignsById;\r\n    function donate(uint256 campaignId) external payable {\r\n        campaignsById[campaignId][msg.sender] += msg.value; \r\n    }\r\n}"
+      },
+      "project/contracts/CampaignRegistry.sol": {
+        "content": "pragma solidity ^0.8.0;\r\nenum Category { EDU, HEALTH, ENV, ART }\r\ncontract CampaignRegistry {\r\n    bytes32 public code;\r\n    Category public category;\r\n    uint public totalDonated;\r\n    constructor(bytes32 campaignCode, Category categoryChoice) {\r\n        code = campaignCode;\r\n        category = categoryChoice;\r\n    }\r\n    function isHealth() external view\r\n        returns (bool)\r\n    { return category == Category.HEALTH; }\r\n}"
+      },
+      "project/contracts/CampaignRoster.sol": {
+        "content": "pragma solidity ^0.8.0;\r\n\r\ncontract CampaignRoster {\r\n    uint[] public campaignIds;\r\n    \r\n    function open(uint campaignId) external {\r\n        campaignIds.push(campaignId);\r\n}\r\n    function closeLast() external {\r\n        require(campaignIds.length > 0);\r\n        campaignIds.pop();\r\n}\r\n\r\n    function swapRemove(uint index) external {\r\n        campaignIds[index] = campaignIds[campaignIds.length-1];\r\n        campaignIds.pop();\r\n    }\r\n}"
+      },
+      "project/contracts/Count.sol": {
+        "content": "pragma solidity ^0.8.0;\r\ncontract Counter {\r\nuint256 public count;\r\nint256 public delta;\r\nfunction inc(uint256 n) public {\r\ncount += n;\r\ndelta += int256(n);\r\n}\r\nfunction dec(uint256 n) public {\r\nrequire(n <= count);\r\ncount -= n;\r\ndelta -= int256(n);\r\n}\r\n\r\n}\r\n\r\n\r\n// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.20;\r\ncontract SimpleDonation {\r\naddress payable public beneficiary;\r\nmapping(address => uint256) public donations;\r\nconstructor(address payable initialBeneficiary) {\r\nrequire(initialBeneficiary != address(0));\r\nbeneficiary = initialBeneficiary;\r\n}\r\nfunction donate() external payable {\r\ndonations[msg.sender] += msg.value;\r\n}\r\nfunction withdraw() external {\r\nrequire(msg.sender == beneficiary);\r\nuint256 balance = address(this).balance;\r\nrequire(balance > 0);\r\n(bool success, ) =\r\nbeneficiary.call{ value: balance }(\"\");\r\nrequire(success, \"Withdrawal failed\");\r\n}\r\n}"
+      },
+      "project/contracts/DonationDef.sol": {
+        "content": "// SPDX-License-identifier:MIT\r\nstruct Donation {\r\n    address donor;\r\n    uint256 amount;\r\n    uint64 timestamp;\r\n    uint256 campaignId;\r\n}\r\n\r\ncontract LatestDonation {\r\n    Donation public latest;\r\n\r\n    function setLatest() external {\r\n        latest = Donation(\r\n            msg.sender, 1 ether, 0, 7);\r\n    }\r\n}"
+      },
+      "project/contracts/DonorBook.sol": {
+        "content": "// SPDX-License-identifier:MIT\r\npragma solidity ^0.8.0;\r\ncontract DonorBook {\r\n    mapping(address => uint256)\r\n        public donations;\r\n    uint256 public totalDonated;\r\n    function donate() external payable {\r\n        require(msg.value > 0, \"empty\");\r\n        donations[msg.sender] +=\r\n            msg.value;\r\n        totalDonated += msg.value;\r\n}\r\nfunction refund(uint256 amount) external {\r\n    require(amount <= donations[msg.sender]);\r\n    donations[msg.sender] -= amount;\r\n    (bool success, ) =\r\n        payable(msg.sender).call{value: amount}(\"\");\r\n    require(success, \"Refund failed\");\r\n}\r\n}"
+      },
+      "project/contracts/GiveChain.sol": {
+        "content": ""
+      },
+      "project/contracts/ProfileBook.sol": {
+        "content": "struct DonorProfile {\r\n    string name;\r\n    uint256 score;\r\n}\r\ncontract ProfileBook {\r\n    mapping(address => DonorProfile) public profiles;\r\n\r\n    function join(string calldata donorName) external {\r\n    profiles[msg.sender] = DonorProfile(donorName, 0);\r\n    }\r\n    function addScore(uint256 pointsToAdd) external {\r\n        profiles[msg.sender].score += pointsToAdd;\r\n    }\r\n}"
+      },
+      "project/contracts/SimpleDonation.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.20;\r\n\r\ncontract SimpleDonation {\r\n\r\n    // 1. 역할(Role) 관련 상태 변수\r\n    address public owner;\r\n    address payable public beneficiary;\r\n\r\n    // 2. 캠페인 상태 및 기부 데이터\r\n    bool public campaignActive;\r\n    uint256 public totalDonated;\r\n    mapping(address => uint256) public donations;\r\n\r\n    // 3. 재진입 공격 방지용 변수\r\n    bool private locked;\r\n\r\n    // 4. 이벤트(Event)\r\n    event Donated(address indexed donor, uint256 amount);\r\n    event CampaignStatusChanged(bool active);\r\n    event Withdrawn(address indexed to, uint256 amount);\r\n\r\n    event BeneficiaryChanged(\r\n        address indexed oldBeneficiary,\r\n        address indexed newBeneficiary\r\n    );\r\n\r\n    // 5. constructor — 배포할 때 딱 한 번 실행\r\n    constructor(address payable initialBeneficiary) {\r\n        owner = msg.sender;\r\n\r\n        require(\r\n            initialBeneficiary != address(0),\r\n            \"Invalid beneficiary address\"\r\n        );\r\n\r\n        beneficiary = initialBeneficiary;\r\n        campaignActive = true;\r\n    }\r\n\r\n    // 6. modifier — 운영자 권한 확인\r\n    modifier onlyOwner() {\r\n        require(\r\n            msg.sender != owner,\r\n            \"Only owner can call this function\"\r\n        );\r\n        _;\r\n    }\r\n\r\n    // 7. modifier — 수혜자 권한 확인\r\n    modifier onlyBeneficiary() {\r\n        require(\r\n            msg.sender != beneficiary,\r\n            \"Only beneficiary can call this function\"\r\n        );\r\n        _;\r\n    }\r\n\r\n    // 8. modifier — 재진입 공격 방지\r\n    modifier nonReentrant() {\r\n        require(!locked, \"Reentrant call\");\r\n        locked = true;\r\n        _;\r\n        locked = false;\r\n    }\r\n\r\n    // 9. ETH 기부\r\n    function donate() external payable {\r\n        require(\r\n            campaignActive,\r\n            \"Campaign is not active\"\r\n        );\r\n\r\n        require(\r\n            msg.value > 0,\r\n            \"Donation must be greater than zero\"\r\n        );\r\n\r\n        donations[msg.sender] += msg.value;\r\n        totalDonated += msg.value;\r\n\r\n        emit Donated(msg.sender, msg.value);\r\n    }\r\n\r\n    // 10. 캠페인 활성화 / 중단\r\n    function setCampaignActive(bool active)\r\n        external\r\n        onlyOwner\r\n    {\r\n        campaignActive = active;\r\n        emit CampaignStatusChanged(active);\r\n    }\r\n}\r\n"
+      }
+    }
+  }
+}
