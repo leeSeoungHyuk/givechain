@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GiveToken Practice</title>
+    <style>
+      body { max-width: 760px; margin: 36px auto; padding: 0 20px; color: #172033; font: 16px/1.5 system-ui, sans-serif; }
+      section { margin: 20px 0; padding: 18px; border: 1px solid #d7dce5; border-radius: 12px; }
+      label { display: block; margin: 10px 0; }
+      input { box-sizing: border-box; width: min(100%, 520px); padding: 9px; }
+      button { padding: 9px 13px; cursor: pointer; }
+      output, #status { display: block; margin-top: 8px; overflow-wrap: anywhere; }
+    </style>
+  </head>
+  <body>
+    <h1>GiveToken 실습</h1>
+    <p>MetaMask와 GiveChain Local(Chain ID 31338)을 사용합니다.</p>
+    <button id="connect">MetaMask 연결</button>
+    <output id="account">연결되지 않음</output>
+
+    <section>
+      <h2>Token 정보와 잔액</h2>
+      <label>Token 주소 <input id="tokenAddress" placeholder="0x..." /></label>
+      <button id="loadToken">Token 불러오기</button>
+      <output id="metadata">-</output>
+      <output id="balance">-</output>
+    </section>
+
+    <section>
+      <h2>전송</h2>
+      <label>받는 주소 <input id="receiver" placeholder="0x..." /></label>
+      <label>수량 <input id="transferAmount" type="number" min="0" step="any" value="1" /></label>
+      <button id="transfer">Token 전송</button>
+    </section>
+
+    <section>
+      <h2>Approve와 Allowance</h2>
+      <label>사용 권한을 받을 주소 <input id="spender" placeholder="0x..." /></label>
+      <label>승인 수량 <input id="approveAmount" type="number" min="0" step="any" value="1" /></label>
+      <button id="approve">승인</button>
+      <button id="readAllowance">Allowance 조회</button>
+      <output id="allowance">-</output>
+    </section>
+    <p id="status" role="status"></p>
+
+    <script type="module">
+      import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@6/+esm";
+
+      const chainIdExpected = 31338n;
+      const abi = [
+        "function name() view returns (string)",
+        "function symbol() view returns (string)",
+        "function decimals() view returns (uint8)",
+        "function balanceOf(address) view returns (uint256)",
+        "function transfer(address,uint256) returns (bool)",
+        "function approve(address,uint256) returns (bool)",
+        "function allowance(address,address) view returns (uint256)",
+      ];
+      let provider;
+      let signer;
+      let account;
+      let readToken;
+      let writeToken;
+      let decimals = 18;
+      const el = (id) => document.getElementById(id);
+      const status = (message) => { el("status").textContent = message; };
+
+      async function connect() {
+        if (!window.ethereum) throw new Error("MetaMask를 찾을 수 없습니다.");
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        provider = new ethers.BrowserProvider(window.ethereum);
+        const network = await provider.getNetwork();
+        if (network.chainId !== chainIdExpected) throw new Error("MetaMask를 GiveChain Local(31338)로 전환하세요.");
+        signer = await provider.getSigner();
+        account = await signer.getAddress();
+        el("account").textContent = `${account} · Chain ${network.chainId}`;
+        status("지갑이 연결되었습니다.");
+      }
+      async function loadToken() {
+        if (!provider) await connect();
+        const address = el("tokenAddress").value.trim();
+        if (!ethers.isAddress(address)) throw new Error("Token 주소를 확인하세요.");
+        readToken = new ethers.Contract(address, abi, provider);
+        writeToken = new ethers.Contract(address, abi, signer);
+        decimals = Number(await readToken.decimals());
+        const [name, symbol, balance] = await Promise.all([
+          readToken.name(), readToken.symbol(), readToken.balanceOf(account),
+        ]);
+        el("metadata").textContent = `${name} (${symbol}) · ${decimals} decimals`;
+        el("balance").textContent = `${ethers.formatUnits(balance, decimals)} ${symbol}`;
+        status("Token 정보를 읽었습니다.");
+      }
+      async function sendTransfer() {
+        if (!writeToken) await loadToken();
+        const receiver = el("receiver").value.trim();
+        if (!ethers.isAddress(receiver)) throw new Error("받는 주소를 확인하세요.");
+        const amount = ethers.parseUnits(el("transferAmount").value, decimals);
+        const tx = await writeToken.transfer(receiver, amount);
+        await tx.wait();
+        await loadToken();
+        status("Token 전송이 완료되었습니다.");
+      }
+      async function approve() {
+        if (!writeToken) await loadToken();
+        const spender = el("spender").value.trim();
+        if (!ethers.isAddress(spender)) throw new Error("승인 대상 주소를 확인하세요.");
+        const amount = ethers.parseUnits(el("approveAmount").value, decimals);
+        const tx = await writeToken.approve(spender, amount);
+        await tx.wait();
+        await readAllowance();
+        status("Allowance 승인이 완료되었습니다. Token은 아직 이동하지 않았습니다.");
+      }
+      async function readAllowance() {
+        if (!readToken) await loadToken();
+        const spender = el("spender").value.trim();
+        if (!ethers.isAddress(spender)) throw new Error("승인 대상 주소를 확인하세요.");
+        const value = await readToken.allowance(account, spender);
+        el("allowance").textContent = `${ethers.formatUnits(value, decimals)} GVT`;
+      }
+      const run = (fn) => fn().catch((error) => status(error.shortMessage || error.message));
+      el("connect").addEventListener("click", () => run(connect));
+      el("loadToken").addEventListener("click", () => run(loadToken));
+      el("transfer").addEventListener("click", () => run(sendTransfer));
+      el("approve").addEventListener("click", () => run(approve));
+      el("readAllowance").addEventListener("click", () => run(readAllowance));
+      if (window.ethereum) {
+        window.ethereum.on("accountsChanged", () => run(connect));
+        window.ethereum.on("chainChanged", () => window.location.reload());
+      }
+    </script>
+  </body>
+</html>

@@ -41,7 +41,7 @@ contract SimpleDonation {
     // 6. modifier — 운영자 권한 확인
     modifier onlyOwner() {
         require(
-            msg.sender != owner,
+            msg.sender == owner,
             "Only owner can call this function"
         );
         _;
@@ -50,7 +50,7 @@ contract SimpleDonation {
     // 7. modifier — 수혜자 권한 확인
     modifier onlyBeneficiary() {
         require(
-            msg.sender != beneficiary,
+            msg.sender == beneficiary,
             "Only beneficiary can call this function"
         );
         _;

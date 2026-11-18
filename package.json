@@ -1,10 +1,14 @@
 {
   "name": "givechain",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "GiveChain blockchain programming exercises",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "node": "hardhat node --network hardhatMainnet",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "deploy:v2": "hardhat run scripts/deployV2.ts --network localhost",
+    "deploy:sepolia": "hardhat run scripts/deployV2.ts --network sepolia"
   },
   "repository": {
     "type": "git",
@@ -21,5 +25,8 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^4.0.0",
     "hardhat": "^3.21.2"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.6.1"
   }
 }
